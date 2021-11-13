@@ -3,7 +3,7 @@
 pragma solidity ^0.8;
 pragma experimental ABIEncoderV2;
 
-contract StakingRewards {
+contract Staking {
     IERC20 public rewardsToken;
     IERC20 public stakingToken;
 
