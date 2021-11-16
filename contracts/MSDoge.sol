@@ -504,7 +504,7 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
     ) internal virtual {}
 }
 
-abstract contract ERC20Burnable is Context, ERC20 {
+abstract contract ERC20Burnable is ERC20 {
     /**
      * @dev Destroys `amount` tokens from the caller.
      *
