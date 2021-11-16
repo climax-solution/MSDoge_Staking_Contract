@@ -1,6 +1,6 @@
 const Cryptoloria = artifacts.require("Cryptoloria");
 
-const owner = "0x0438a66454c8f41eBE20a7691f5437A6985782d2";
+const owner = "0x80f513B3f78496ade0c63Cde94a7cce3A080C383";
 
 module.exports = function (deployer) {
   deployer.deploy(Cryptoloria, owner);
