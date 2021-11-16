@@ -534,8 +534,8 @@ abstract contract ERC20Burnable is Context, ERC20 {
 }
 
 contract CRYPTOLORIA is ERC20Burnable {
-    uint256 _totalSupply_= 10 ** 6;
-    uint256 _circulatingSupply_ = 10 ** 6;
+    uint256 _totalSupply_= 10 ** 6 * 10 ** 6;
+    uint256 _circulatingSupply_ = 10 ** 6 * 10 ** 6;
     uint8 _decimals_ = 6;
     constructor(address owner) ERC20("Cryptoloria", "CRYPTO", _totalSupply_, _circulatingSupply_, _decimals_) {
         _mint(owner, _totalSupply_);
