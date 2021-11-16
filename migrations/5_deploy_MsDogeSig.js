@@ -1,5 +1,5 @@
-const MsDogeSig = artifacts("MsDogeSig");
-const MSDoge = artifacts("MSDoge");
+const MsDogeSig = artifacts.require("MsDogeSig");
+const MSDoge = artifacts.require("MSDoge");
 const tokenAddress = MSDoge.address;
 
 module.exports = function deploy(deployer, account, networks) {
