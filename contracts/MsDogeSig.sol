@@ -49,7 +49,7 @@ contract MSDogeSig {
     function newTransferRequest(address to, uint256 value) public onlyOwners returns(uint256){
         RequestStruct memory transferRequest = RequestStruct(true, false, to, value, 1, 0, true );
         transferList.push(transferRequest);
-        return transferList.length;
+        return 33;
     }
 
     function approveTransferRequest(uint idx) public onlyOwners {
