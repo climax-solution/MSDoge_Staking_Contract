@@ -98,7 +98,7 @@ contract MSDogeSig {
         uint256 ownBalance = token.balanceOf(address(this));
         require(value <= ownBalance);
 
-        burnRequest = RequestStruct( true, false, address(0), value, 1, 0,msg.sender, true );
+        burnRequest = RequestStruct( true, false, address(0), value, 1, 0, true );
     }
 
     function approveBurnRequest() public onlyOwners {
