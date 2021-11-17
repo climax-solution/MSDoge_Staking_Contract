@@ -19,7 +19,6 @@ contract MSDogeSig {
         uint256 value;
         uint8 approvals;
         uint8 declines;
-        address createdBy;
         bool isActive;
     }
 
@@ -48,7 +47,7 @@ contract MSDogeSig {
 
     // start transfer part
     function newTransferRequest(address to, uint256 value) public onlyOwners returns(uint256){
-        RequestStruct memory transferRequest = RequestStruct(true, false, to, value, 1, 0, msg.sender, true );
+        RequestStruct memory transferRequest = RequestStruct(true, false, to, value, 1, 0, true );
         transferList.push(transferRequest);
         return transferList.length;
     }
@@ -140,5 +139,11 @@ contract MSDogeSig {
     
     function getTransferedAmount() public view returns (uint256) {
         return transferedAmount;
+    }
+    
+    function getRequestList() public view returns (RequestStruct[] memory list) {
+        RequestStruct[] memory lists;
+        lists = transferList;
+        return lists;
     }
 }
