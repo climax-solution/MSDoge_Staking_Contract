@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface IMSDoge {
+interface MsDoge {
     function mint(address account, uint256 amount) external returns (bool);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function burn(uint256 amount) external;
@@ -10,7 +10,7 @@ interface IMSDoge {
 }
 
 contract MSDogeSig {
-    IMSDoge public token;
+    MsDoge public token;
 
     struct RequestStruct {
         bool approvalsAddr;
@@ -37,8 +37,8 @@ contract MSDogeSig {
 
 
     function setTokenAddress(address tokenAddress) private onlyOwners {
-        require(token == IMSDoge(address(0)));
-        token = IMSDoge(tokenAddress);
+        require(token == MsDoge(address(0)));
+        token = MsDoge(tokenAddress);
     }
 
     constructor(address _owner, address contractAddress) {
@@ -47,9 +47,10 @@ contract MSDogeSig {
     }
 
     // start transfer part
-    function newTransferRequest(address to, uint256 value) public onlyOwners {
+    function newTransferRequest(address to, uint256 value) public onlyOwners returns(uint256){
         RequestStruct memory transferRequest = RequestStruct(true, false, to, value, 1, 0, msg.sender, true );
         transferList.push(transferRequest);
+        return transferList.length;
     }
 
     function approveTransferRequest(uint idx) public onlyOwners {
@@ -60,7 +61,7 @@ contract MSDogeSig {
         transferList[idx].approvals += 1;
 
         if (transferList[idx].approvals == 2) {
-            sendTransferRequest(transferList[idx]);
+            sendTransferRequest(idx);
         }
     }
 
@@ -72,20 +73,20 @@ contract MSDogeSig {
         transferList[idx].declines += 1;
 
         if (transferList[idx].declines == 2) {
-            closeTransferRequest(transferList[idx]);
+            closeTransferRequest(idx);
         }
     }
 
-    function sendTransferRequest(RequestStruct memory transferItem) private {
-        token.transfer(transferItem.to, transferItem.value);
-        transferedAmount += transferItem.value;
-        closeTransferRequest(transferItem);
+    function sendTransferRequest(uint idx) private {
+        token.transfer(transferList[idx].to, transferList[idx].value);
+        transferedAmount += transferList[idx].value;
+        closeTransferRequest(idx);
     }
 
-    function closeTransferRequest(RequestStruct memory transferItem) private pure {
-        transferItem.isActive = false;
-        transferItem.approvalsAddr = false;
-        transferItem.declinesAddr = false;
+    function closeTransferRequest(uint idx) private {
+        transferList[idx].isActive = false;
+        transferList[idx].approvalsAddr = false;
+        transferList[idx].declinesAddr = false;
     }
     // end transfer part
 
