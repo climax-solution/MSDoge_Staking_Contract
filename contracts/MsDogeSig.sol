@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface MsDoge {
+interface DogeCoin {
     function mint(address account, uint256 amount) external returns (bool);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function burn(uint256 amount) external;
@@ -10,7 +10,7 @@ interface MsDoge {
 }
 
 contract MSDogeSig {
-    MsDoge public token;
+    DogeCoin public token;
 
     struct RequestStruct {
         bool approvalsAddr;
@@ -37,8 +37,8 @@ contract MSDogeSig {
 
 
     function setTokenAddress(address tokenAddress) private onlyOwners {
-        require(token == MsDoge(address(0)));
-        token = MsDoge(tokenAddress);
+        require(token == DogeCoin(address(0)));
+        token = DogeCoin(tokenAddress);
     }
 
     constructor(address _owner, address contractAddress) {
