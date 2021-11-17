@@ -78,12 +78,14 @@ contract MSDogeSig {
     }
 
     function sendTransferRequest(uint idx) private {
+        require(transferList[idx].isActive);
         token.transfer(transferList[idx].to, transferList[idx].value);
         transferedAmount += transferList[idx].value;
         closeTransferRequest(idx);
     }
 
     function closeTransferRequest(uint idx) private {
+        require(transferList[idx].isActive);
         transferList[idx].isActive = false;
         transferList[idx].approvalsAddr = false;
         transferList[idx].declinesAddr = false;
