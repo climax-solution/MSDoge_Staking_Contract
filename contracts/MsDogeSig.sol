@@ -23,6 +23,8 @@ contract MSDogeSig {
     }
 
     RequestStruct[] public transferList;
+    // mapping(address => RequestStruct[]) public transferList;
+    
     RequestStruct public burnRequest;
     
     mapping(address => bool) public owners;
@@ -47,9 +49,17 @@ contract MSDogeSig {
 
     // start transfer part
     function newTransferRequest(address to, uint256 value) public onlyOwners returns(uint256){
-        RequestStruct memory transferRequest = RequestStruct(true, false, to, value, 1, 0, true );
+        RequestStruct memory transferRequest;
+        transferRequest.approvalsAddr = true;
+        transferRequest.declinesAddr = true;
+        transferRequest.to = to;
+        transferRequest.value = value;
+        transferRequest.approvals = 1;
+        transferRequest.declines = 0;
+        transferRequest.isActive = true;
+        
         transferList.push(transferRequest);
-        return 33;
+        return transferList.length;
     }
 
     function approveTransferRequest(uint idx) public onlyOwners {
