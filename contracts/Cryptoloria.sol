@@ -540,5 +540,4 @@ contract CRYPTOLORIA is ERC20Burnable {
     constructor(address owner) ERC20("Cryptoloria", "CRYPTO", _totalSupply_, _circulatingSupply_, _decimals_) {
         _mint(owner, _totalSupply_);
     }
-    
 }
