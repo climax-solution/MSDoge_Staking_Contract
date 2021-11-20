@@ -4,30 +4,37 @@ pragma solidity ^0.8.0;
 
 interface DogeCoin {
     function mint(address account, uint256 amount) external returns (bool);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function burn(uint256 amount) external;
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function burnFrom(address account, uint256 amount) external;
     function balanceOf(address account) external view returns (uint256);
+    function totalSupply() external view returns (uint256);
+    function circulatingSupply() external view returns (uint256);
 }
 
 contract MSDogeSig {
     DogeCoin public token;
 
     struct RequestStruct {
-        bool approvalsAddr;
-        bool declinesAddr;
+        bool isActive;
+        bool isClosed;
+        bool isSent;
         address to;
         uint256 value;
-        uint8 approvals;
-        uint8 declines;
-        bool isActive;
+        uint256 index;
     }
 
-    RequestStruct[] public transferList;
-    // mapping(address => RequestStruct[]) public transferList;
+    struct AirDropStruct {
+        address addresses;
+        uint256 balances;
+    }
     
+    RequestStruct[] public transferList;
+    AirDropStruct[] public airDropList;
+
     RequestStruct public burnRequest;
     
     mapping(address => bool) public owners;
+    address private Owner;
     address[] public ownArray;
     uint256 transferedAmount;
     
@@ -38,122 +45,123 @@ contract MSDogeSig {
 
 
     function setTokenAddress(address tokenAddress) private onlyOwners {
-        require(token == DogeCoin(address(0)));
         token = DogeCoin(tokenAddress);
     }
 
-    constructor(address _owner, address contractAddress) {
+    constructor(address _owner, address tokenAddress) {
         owners[_owner] = true;
-        setTokenAddress(contractAddress);
+        Owner = _owner;
+        setTokenAddress(tokenAddress);
     }
 
     // start transfer part
-    function newTransferRequest(address to, uint256 value) public onlyOwners returns(uint256){
-        RequestStruct memory transferRequest;
-        transferRequest.approvalsAddr = true;
-        transferRequest.declinesAddr = true;
-        transferRequest.to = to;
-        transferRequest.value = value;
-        transferRequest.approvals = 1;
-        transferRequest.declines = 0;
-        transferRequest.isActive = true;
+    function newTransferRequest(address to, uint256 value) public onlyOwners {
+        RequestStruct memory transferRequest = RequestStruct({
+            to: to,
+            value: value,
+            isClosed: false,
+            isSent: false,
+            isActive: true,
+            index: transferList.length
+        });
         
         transferList.push(transferRequest);
-        return transferList.length;
     }
 
+    function getRequestLength() public view returns(uint) {
+        return transferList.length;    
+    }
+    
+    function getTransferItem(uint idx) public view returns(RequestStruct memory item) {
+        return transferList[idx];
+    }
+    
     function approveTransferRequest(uint idx) public onlyOwners {
         require(transferList[idx].isActive);
-        require(!transferList[idx].approvalsAddr);
-
-        transferList[idx].approvalsAddr = true;
-        transferList[idx].approvals += 1;
-
-        if (transferList[idx].approvals == 2) {
-            sendTransferRequest(idx);
-        }
+        sendTransferRequest(idx);
     }
 
     function declineTransferRequest(uint idx) public onlyOwners {
         require(transferList[idx].isActive);
-        require(!transferList[idx].declinesAddr);
-
-        transferList[idx].declinesAddr = true;
-        transferList[idx].declines += 1;
-
-        if (transferList[idx].declines == 2) {
-            closeTransferRequest(idx);
-        }
+        closeTransferRequest(idx, false);
     }
 
     function sendTransferRequest(uint idx) private {
         require(transferList[idx].isActive);
-        token.transfer(transferList[idx].to, transferList[idx].value);
+        token.transferFrom(msg.sender, transferList[idx].to, transferList[idx].value);
         transferedAmount += transferList[idx].value;
-        closeTransferRequest(idx);
+        closeTransferRequest(idx, true);
     }
-
-    function closeTransferRequest(uint idx) private {
+    
+    function closeTransferRequest(uint idx, bool status) private {
         require(transferList[idx].isActive);
         transferList[idx].isActive = false;
-        transferList[idx].approvalsAddr = false;
-        transferList[idx].declinesAddr = false;
+        transferList[idx].isClosed = true;
+        transferList[idx].isSent = status;
     }
     // end transfer part
 
     // start burn part
     function newBurnRequest(uint256 value) public onlyOwners {
         require(!burnRequest.isActive);
-
-        uint256 ownBalance = token.balanceOf(address(this));
+        uint256 ownBalance = token.balanceOf(Owner);
         require(value <= ownBalance);
 
-        burnRequest = RequestStruct( true, false, address(0), value, 1, 0, true );
+        burnRequest = RequestStruct({
+            to: Owner,
+            value: value,
+            isActive: true,
+            isClosed: false,
+            isSent: false,
+            index: 0
+        });
     }
 
     function approveBurnRequest() public onlyOwners {
         require(burnRequest.isActive);
-        require(!burnRequest.approvalsAddr);
-
-        burnRequest.approvalsAddr = true;
-        burnRequest.approvals += 1;
-
-        if (burnRequest.approvals == 2) {
-            sendBurnRequest();
-        }
+        sendBurnRequest();
     }
 
     function declineBurnRequest() public onlyOwners {
         require(burnRequest.isActive);
-        require(!burnRequest.declinesAddr);
-
-        burnRequest.declinesAddr = true;
-        burnRequest.declines += 1;
-
-        if (burnRequest.declines == 2) {
-            closeBurnRequest();
-        }
+        closeBurnRequest(false);
     }
 
     function sendBurnRequest() private {
-        token.burn(burnRequest.value);
-        closeBurnRequest();
+        token.burnFrom(msg.sender, burnRequest.value);
+        closeBurnRequest(true);
     }
 
-    function closeBurnRequest() private {
+    function closeBurnRequest(bool status) private {
         burnRequest.isActive = false;
-        burnRequest.approvalsAddr = false;
-        burnRequest.declinesAddr = false;
+        burnRequest.isClosed = true;
+        burnRequest.isSent = status;
     }
     // end burn part
+
+    function airDrop(AirDropStruct[] calldata list) public onlyOwners {
+        for (uint i = 0; i < list.length; i++) {
+            uint256 balance = token.balanceOf(msg.sender);
+            require (balance >= list[i].balances, "balance is not enough");
+            token.transferFrom(msg.sender, list[i].addresses, list[i].balances);
+            transferedAmount += list[i].balances;
+            airDropList.push(AirDropStruct(list[i].addresses, list[i].balances));
+        }
+    }
     
     function getTransferedAmount() public view returns (uint256) {
         return transferedAmount;
     }
     
     function getRequestList() public view returns (RequestStruct[] memory list) {
-        RequestStruct[] memory lists;
-        lists = transferList;
-        return lists;
+        return transferList;
+    }
+    
+    function getBurnRequest() public view returns(RequestStruct memory item) {
+        return burnRequest;
+    }
+    
+    function getAirDropList() public view returns(AirDropStruct[] memory list) {
+        return airDropList;
     }
 }
