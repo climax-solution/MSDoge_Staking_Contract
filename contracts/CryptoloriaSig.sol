@@ -11,7 +11,7 @@ interface LoriaCoin {
     function circulatingSupply() external view returns (uint256);
 }
 
-contract MSDogeSig {
+contract CryptoLoriaSig {
     LoriaCoin public token;
 
     struct RequestStruct {
