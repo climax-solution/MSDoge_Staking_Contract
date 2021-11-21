@@ -18,6 +18,7 @@ contract MSDogeSig {
         bool isActive;
         bool isClosed;
         bool isSent;
+        address createdBy;
         address to;
         uint256 value;
         uint256 index;
@@ -28,15 +29,14 @@ contract MSDogeSig {
         uint256 balances;
     }
     
-    RequestStruct[] public transferList;
-    AirDropStruct[] public airDropList;
+    mapping(address => RequestStruct[]) public transferList;
+    mapping(address => AirDropStruct[]) public airDropList;
 
     RequestStruct public burnRequest;
     
     mapping(address => bool) public owners;
-    address private Owner;
     address[] public ownArray;
-    uint256 transferedAmount;
+    mapping(address => uint256) transferedAmount;
     
     modifier onlyOwners() {
         require(owners[msg.sender]);
@@ -48,9 +48,9 @@ contract MSDogeSig {
         token = DogeCoin(tokenAddress);
     }
 
-    constructor(address _owner, address tokenAddress) {
-        owners[_owner] = true;
-        Owner = _owner;
+    constructor(address[] memory _owners, address tokenAddress) {
+        require(_owners.length == 3, "Owners are not 3 addresses" );
+        for (uint i = 0; i < _owners.length; i ++) owners[_owners[i]] = true;
         setTokenAddress(tokenAddress);
     }
 
@@ -62,58 +62,67 @@ contract MSDogeSig {
             isClosed: false,
             isSent: false,
             isActive: true,
-            index: transferList.length
+            index: transferList[msg.sender].length,
+            createdBy: msg.sender
         });
         
-        transferList.push(transferRequest);
+        transferList[msg.sender].push(transferRequest);
     }
 
     function getRequestLength() public view returns(uint) {
-        return transferList.length;    
+        return transferList[msg.sender].length;    
     }
     
     function getTransferItem(uint idx) public view returns(RequestStruct memory item) {
-        return transferList[idx];
+        return transferList[msg.sender][idx];
     }
     
     function approveTransferRequest(uint idx) public onlyOwners {
-        require(transferList[idx].isActive);
+        require(transferList[msg.sender][idx].isActive);
         sendTransferRequest(idx);
     }
 
+    function approveTransferListRequest(RequestStruct[] memory list) public onlyOwners {
+        for (uint i = 0; i < list.length; i ++) {
+            approveTransferRequest(list[i].index);
+        }
+    }
+    
     function declineTransferRequest(uint idx) public onlyOwners {
-        require(transferList[idx].isActive);
+        require(transferList[msg.sender][idx].isActive);
         closeTransferRequest(idx, false);
     }
 
-    function sendTransferRequest(uint idx) private {
-        require(transferList[idx].isActive);
-        token.transferFrom(msg.sender, transferList[idx].to, transferList[idx].value);
-        transferedAmount += transferList[idx].value;
+    function sendTransferRequest(uint idx) private onlyOwners {
+        require(transferList[msg.sender][idx].isActive);
+        transferList[msg.sender][idx].isActive = false;
+        token.transferFrom(msg.sender, transferList[msg.sender][idx].to, transferList[msg.sender][idx].value);
+        transferedAmount[msg.sender] += transferList[msg.sender][idx].value;
         closeTransferRequest(idx, true);
     }
     
-    function closeTransferRequest(uint idx, bool status) private {
-        require(transferList[idx].isActive);
-        transferList[idx].isActive = false;
-        transferList[idx].isClosed = true;
-        transferList[idx].isSent = status;
+    function closeTransferRequest(uint idx, bool status) private onlyOwners {
+        require(transferList[msg.sender][idx].isActive);
+        transferList[msg.sender][idx].isActive = false;
+        transferList[msg.sender][idx].isClosed = true;
+        transferList[msg.sender][idx].isSent = status;
     }
     // end transfer part
 
     // start burn part
     function newBurnRequest(uint256 value) public onlyOwners {
         require(!burnRequest.isActive);
-        uint256 ownBalance = token.balanceOf(Owner);
+        uint256 ownBalance = token.balanceOf(msg.sender);
         require(value <= ownBalance);
 
         burnRequest = RequestStruct({
-            to: Owner,
+            to: msg.sender,
             value: value,
             isActive: true,
             isClosed: false,
             isSent: false,
-            index: 0
+            index: 0,
+            createdBy: msg.sender
         });
     }
 
@@ -141,27 +150,25 @@ contract MSDogeSig {
 
     function airDrop(AirDropStruct[] calldata list) public onlyOwners {
         for (uint i = 0; i < list.length; i++) {
-            uint256 balance = token.balanceOf(msg.sender);
-            require (balance >= list[i].balances, "balance is not enough");
             token.transferFrom(msg.sender, list[i].addresses, list[i].balances);
-            transferedAmount += list[i].balances;
-            airDropList.push(AirDropStruct(list[i].addresses, list[i].balances));
+            transferedAmount[msg.sender] += list[i].balances;
+            airDropList[msg.sender].push(AirDropStruct(list[i].addresses, list[i].balances));
         }
     }
     
-    function getTransferedAmount() public view returns (uint256) {
-        return transferedAmount;
+    function getTransferedAmount() public onlyOwners view returns (uint256) {
+        return transferedAmount[msg.sender];
     }
     
-    function getRequestList() public view returns (RequestStruct[] memory list) {
-        return transferList;
+    function getRequestList() public onlyOwners view returns (RequestStruct[] memory list) {
+        return transferList[msg.sender];
     }
     
     function getBurnRequest() public view returns(RequestStruct memory item) {
         return burnRequest;
     }
     
-    function getAirDropList() public view returns(AirDropStruct[] memory list) {
-        return airDropList;
+    function getAirDropList() public onlyOwners view returns(AirDropStruct[] memory list) {
+        return airDropList[msg.sender];
     }
 }
