@@ -404,6 +404,7 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
         _beforeTokenTransfer(address(0), account, amount);
 
         _totalSupply += amount;
+        _circulatingSupply += amount;
         _balances[account] += amount;
         emit Transfer(address(0), account, amount);
 
@@ -432,6 +433,7 @@ contract ERC20 is Ownable, IERC20, IERC20Metadata {
             _balances[account] = accountBalance - amount;
         }
         _totalSupply -= amount;
+        _circulatingSupply -= amount;
 
         emit Transfer(account, address(0), amount);
 
@@ -534,10 +536,11 @@ abstract contract ERC20Burnable is ERC20 {
 }
 
 contract CRYPTOLORIA is ERC20Burnable {
-    uint256 _totalSupply_= 10 ** 8 * 10 ** 6;
-    uint256 _circulatingSupply_ = 10 ** 8 * 10 ** 6;
-    uint8 _decimals_ = 6;
-    constructor(address owner) ERC20("Cryptoloria", "CRYPTO", _totalSupply_, _circulatingSupply_, _decimals_) {
-        _mint(owner, _totalSupply_);
+    uint256 _amount_= 10 ** 8 * 10 ** 6;
+    uint256 _totalSuply_ = 0;
+    uint256 _circulatingSupply_ = _amount_;
+    uint8 _decimals_ = 9;
+    constructor() ERC20("Cryptoloria", "CRYPTO", _totalSuply_, _circulatingSupply_, _decimals_) {
+        _mint(_msgSender(), _amount_);
     }
 }
