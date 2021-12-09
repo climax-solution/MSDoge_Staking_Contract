@@ -533,11 +533,11 @@ abstract contract ERC20Burnable is Context, ERC20 {
     }
 }
 
-contract XMSDOGE is ERC20Burnable {
+contract xMSDOGE is ERC20Burnable {
     uint256 _totalSupply_= 10 ** 12 * 10 ** 9;
     uint256 _circulatingSupply_ = 5 * 10 ** 11 * 10 ** 9;
     uint8 _decimals_ = 9;
-    constructor(address owner) ERC20("XMsDogeCoin", "xMSDOGE", _totalSupply_, _circulatingSupply_, _decimals_) {
+    constructor(address owner) ERC20("xMsDogeCoin", "xMSDOGE", _totalSupply_, _circulatingSupply_, _decimals_) {
         _mint(owner, _totalSupply_);
     }
     
